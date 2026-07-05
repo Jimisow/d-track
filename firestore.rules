@@ -1,0 +1,54 @@
+rules_version = '2';
+
+// Règles de sécurité D-Track — à publier dans la console Firebase
+// (Firestore Database → Règles), après avoir activé l'authentification anonyme.
+//
+// Philosophie : les salons sont des espaces de confiance entre amis identifiés
+// par un code de 5 caractères. On exige une authentification (anonyme) et on
+// valide la forme des documents, sans chercher à arbitrer la triche entre amis.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /games/{code} {
+      // Lecture réservée aux utilisateurs authentifiés (auth anonyme incluse).
+      allow read: if request.auth != null;
+
+      // Création : code de salon valide, créateur = hôte, partie en lobby,
+      // 12 lancers partagés (24 symboles), au moins 1 joueur (le créateur).
+      allow create: if request.auth != null
+        && code.size() == 5
+        && request.resource.data.hostId == request.auth.uid
+        && request.resource.data.status == 'lobby'
+        && request.resource.data.sharedRolls is list
+        && request.resource.data.sharedRolls.size() == 24
+        && request.resource.data.players is map
+        && request.resource.data.players.size() >= 1
+        && request.auth.uid in request.resource.data.players;
+
+      // Mise à jour : partie existante, statut cohérent, jamais plus de 6 joueurs.
+      // (Les clients ne modifient que leur propre sous-arbre `players.{uid}` ou
+      // les champs de coordination — la validation fine par clé de map n'est pas
+      // exprimable simplement dans les règles, on borne donc la structure.)
+      allow update: if request.auth != null
+        && request.auth.uid in resource.data.players
+        && request.resource.data.status in ['lobby', 'playing', 'finished']
+        && request.resource.data.players.size() <= 6;
+
+      // Cas particulier : un nouveau joueur (pas encore dans `players`) rejoint
+      // un salon encore en lobby en s'ajoutant lui-même.
+      allow update: if request.auth != null
+        && !(request.auth.uid in resource.data.players)
+        && resource.data.status == 'lobby'
+        && request.resource.data.players.size() <= 6
+        && request.auth.uid in request.resource.data.players;
+
+      // Pas de suppression côté client (les parties >24 h sont ignorées côté app).
+      allow delete: if false;
+    }
+
+    // Tout le reste est interdit.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
