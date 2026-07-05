@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>D-Track</title>
+  <meta name="description" content="D-Track — jeu de dés roll & write, solo hors-ligne ou multijoueur en ligne (1 à 6 joueurs).">
+  <meta name="theme-color" content="#12141d">
+  <link rel="icon" href="/d-track/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/d-track/icons/icon-192.svg">
+  <!-- Police Nunito (fallback système si hors-ligne, mise en cache par le SW ensuite) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/d-track/assets/index-DADVKp_b.js"></script>
+  <link rel="stylesheet" crossorigin href="/d-track/assets/index-BGd8DqCl.css">
+<link rel="manifest" href="/d-track/manifest.webmanifest"></head>
+<body>
+  <!-- Bandeaux globaux : réseau perdu, mise à jour du service worker -->
+  <div id="banner-offline" class="banner banner-warn" hidden>Connexion perdue, reconnexion…</div>
+  <div id="banner-update" class="banner banner-info" hidden>
+    <span>Nouvelle version disponible</span>
+    <button id="btn-update" class="btn btn-small">Actualiser</button>
+  </div>
+
+  <main id="app">
+
+    <!-- ======================= ACCUEIL ======================= -->
+    <section class="screen active" id="screen-home">
+      <div class="home-inner">
+        <div class="logo">
+          <div class="logo-die" aria-hidden="true"></div>
+          <h1>D-Track</h1>
+          <p class="tagline">Lancez, placez, alignez !</p>
+        </div>
+        <nav class="home-menu">
+          <button class="btn btn-primary btn-big" id="btn-solo">🎲 Jouer en solo</button>
+          <button class="btn btn-big" id="btn-create">➕ Créer une partie</button>
+          <button class="btn btn-big" id="btn-join">🔗 Rejoindre</button>
+          <button class="btn btn-ghost btn-big" id="btn-rules">📖 Règles</button>
+          <button class="btn btn-ghost btn-big" id="btn-resume" hidden>⏯ Reprendre la partie <span id="resume-code"></span></button>
+        </nav>
+        <div class="home-stats" id="home-stats" hidden>
+          <div>Meilleur score solo : <strong id="home-best">—</strong></div>
+        </div>
+        <div class="home-footer">
+          <button class="btn btn-ghost btn-small" id="btn-theme" title="Changer de thème">🌓 Thème</button>
+          <button class="btn btn-ghost btn-small" id="btn-install" hidden>📲 Installer l’app</button>
+          <button class="btn btn-ghost btn-small" id="btn-history">📜 Historique</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= RÈGLES ======================= -->
+    <section class="screen" id="screen-rules">
+      <header class="screen-header">
+        <button class="btn btn-ghost btn-back" data-back>←</button>
+        <h2>Règles du jeu</h2>
+      </header>
+      <div class="scroll-area" id="rules-content"><!-- rempli par ui/rules.js --></div>
+    </section>
+
+    <!-- ======================= HISTORIQUE SOLO ======================= -->
+    <section class="screen" id="screen-history">
+      <header class="screen-header">
+        <button class="btn btn-ghost btn-back" data-back>←</button>
+        <h2>Historique solo</h2>
+      </header>
+      <div class="scroll-area" id="history-content"></div>
+    </section>
+
+    <!-- ======================= CRÉER / REJOINDRE ======================= -->
+    <section class="screen" id="screen-online-setup">
+      <header class="screen-header">
+        <button class="btn btn-ghost btn-back" data-back>←</button>
+        <h2 id="setup-title">Créer une partie</h2>
+      </header>
+      <form class="setup-form" id="setup-form">
+        <label for="input-name">Votre pseudo</label>
+        <input id="input-name" type="text" maxlength="14" autocomplete="nickname" placeholder="Ex. : Léa" required>
+        <div id="setup-code-row" hidden>
+          <label for="input-code">Code du salon</label>
+          <input id="input-code" type="text" maxlength="5" autocomplete="off" autocapitalize="characters"
+                 spellcheck="false" placeholder="K7XPM" class="input-code">
+        </div>
+        <button class="btn btn-primary btn-big" id="setup-submit" type="submit">Créer le salon</button>
+        <p class="form-error" id="setup-error" role="alert" hidden></p>
+      </form>
+    </section>
+
+    <!-- ======================= LOBBY ======================= -->
+    <section class="screen" id="screen-lobby">
+      <header class="screen-header">
+        <button class="btn btn-ghost btn-back" id="lobby-leave">←</button>
+        <h2>Salon</h2>
+      </header>
+      <div class="lobby-inner">
+        <div class="lobby-code-card">
+          <span>Code du salon</span>
+          <button class="lobby-code" id="lobby-code" title="Copier le code">—</button>
+          <small>Dictez ce code aux autres joueurs (2 à 6 joueurs)</small>
+        </div>
+        <ul class="lobby-players" id="lobby-players"></ul>
+        <div class="lobby-actions">
+          <button class="btn btn-big" id="btn-ready">✅ Je suis prêt</button>
+          <button class="btn btn-primary btn-big" id="btn-start" hidden disabled>🚀 Lancer la partie</button>
+          <p class="lobby-hint" id="lobby-hint"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= JEU ======================= -->
+    <section class="screen" id="screen-game">
+      <header class="game-hud">
+        <button class="btn btn-ghost btn-back" id="game-quit">←</button>
+        <div class="hud-turn" id="hud-turn">Tour initial</div>
+        <div class="hud-score" id="hud-score">0 pt</div>
+      </header>
+      <p class="game-hint" id="game-hint"></p>
+      <div class="dice-row" id="dice-row">
+        <button class="die" id="die-0" aria-label="Dé 1"></button>
+        <button class="die" id="die-1" aria-label="Dé 2"></button>
+      </div>
+      <div class="symbol-picker" id="symbol-picker" hidden></div>
+      <div class="grid-wrap">
+        <span class="diag-arrow diag-arrow-top" aria-hidden="true">➘</span>
+        <div class="grid" id="grid" role="grid" aria-label="Votre grille 5 par 5"></div>
+        <span class="diag-arrow diag-arrow-bottom" aria-hidden="true">➘</span>
+      </div>
+      <div class="game-actions">
+        <button class="btn" id="btn-cancel" disabled>Annuler</button>
+        <button class="btn btn-primary" id="btn-validate" disabled>Valider</button>
+      </div>
+      <!-- Attente des autres joueurs (multijoueur) -->
+      <div class="waiting-overlay" id="waiting-overlay" hidden>
+        <div class="waiting-card">
+          <div class="waiting-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+          <h3>En attente de :</h3>
+          <ul id="waiting-list"></ul>
+          <div id="waiting-host-actions"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= RÉSULTATS ======================= -->
+    <section class="screen" id="screen-results">
+      <header class="screen-header">
+        <button class="btn btn-ghost btn-back" id="results-home">←</button>
+        <h2>Résultats</h2>
+      </header>
+      <div class="scroll-area" id="results-content"></div>
+      <div class="results-actions" id="results-actions"></div>
+    </section>
+
+  </main>
+
+  <!-- Visionneuse de grille (résultats multijoueur) -->
+  <dialog id="grid-viewer">
+    <div class="viewer-inner" id="grid-viewer-content"></div>
+    <button class="btn btn-big" id="viewer-close">Fermer</button>
+  </dialog>
+
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+  <div id="toast" class="toast" role="status" hidden></div>
+
+</body>
+</html>
