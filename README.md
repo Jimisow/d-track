@@ -1,5 +1,7 @@
 # 🎲 D-Track
 
+🔗 **Jouer en ligne : [jimisow.github.io/d-track](https://jimisow.github.io/d-track/)**
+
 Jeu de dés **roll & write** (1 à 6 joueurs) en Progressive Web App :
 
 - **Solo** : 100 % hors-ligne (service worker), meilleur score et historique des 20 dernières parties en local.
@@ -51,9 +53,17 @@ npm run build
 firebase deploy
 ```
 
+### GitHub Pages (déploiement actuel)
+
+```bash
+npm run deploy      # build + publie dist/ sur la branche gh-pages (paquet gh-pages)
+```
+
+Le site est servi en page de projet (`https://<utilisateur>.github.io/d-track/`) : `vite.config.js` fixe donc `base: '/d-track/'` (manifest et service worker inclus). Si le dépôt est renommé ou dupliqué sous un autre nom, penser à adapter cette valeur.
+
 ### Netlify / Vercel
 
-Build command : `npm run build` — répertoire de publication : `dist`. Rien d'autre à configurer (app 100 % statique + Firestore côté client).
+Build command : `npm run build` — répertoire de publication : `dist`. Rien d'autre à configurer (app 100 % statique + Firestore côté client). Adapter/retirer le `base` de `vite.config.js` si l'app est servie à la racine du domaine plutôt que dans un sous-dossier.
 
 ## 📐 Architecture
 
