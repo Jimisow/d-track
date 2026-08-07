@@ -1,6 +1,6 @@
 # 🎲 D-Track
 
-🔗 **Jouer en ligne : [jimisow.github.io/d-track](https://jimisow.github.io/d-track/)**
+🔗 **Jouer en ligne : [dtrack.kump.fr](https://dtrack.kump.fr/)**
 
 Jeu de dés **roll & write** (1 à 6 joueurs) en Progressive Web App :
 
@@ -59,7 +59,7 @@ firebase deploy
 npm run deploy      # build + publie dist/ sur la branche gh-pages (paquet gh-pages)
 ```
 
-Le site est servi en page de projet (`https://<utilisateur>.github.io/d-track/`) : `vite.config.js` fixe donc `base: '/d-track/'` (manifest et service worker inclus). Si le dépôt est renommé ou dupliqué sous un autre nom, penser à adapter cette valeur.
+Le site est servi via le domaine personnalisé `dtrack.kump.fr` (fichier [`public/CNAME`](public/CNAME), pris en compte automatiquement par GitHub Pages), qui répond à la racine — `vite.config.js` fixe donc `base: '/'`. Le fichier `CNAME` doit rester dans `public/` pour survivre à chaque `npm run deploy` (sinon `gh-pages` écrase la branche `gh-pages` et l'association au domaine personnalisé saute). Si vous repassez un jour par l'URL de projet `github.io/<repo>/` sans domaine personnalisé, remettre `base: '/<repo>/'`.
 
 ### Netlify / Vercel
 

@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// Déployé sur GitHub Pages en page de projet (https://<user>.github.io/d-track/) :
-// tout doit être résolu sous ce sous-dossier, jamais à la racine du domaine.
-const base = '/d-track/';
+// Servi via le domaine personnalisé dtrack.kump.fr (voir public/CNAME), qui
+// répond à la racine — contrairement à l'URL de projet github.io/d-track/
+// utilisée avant, tout doit donc être résolu depuis la racine du domaine.
+const base = '/';
 
 export default defineConfig({
   base,
