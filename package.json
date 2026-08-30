@@ -10,11 +10,13 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "predeploy": "node scripts/check-deploy.js && npm run build",
+    "deploy": "gh-pages -d dist",
+    "export:rules": "node scripts/export-rules.cjs"
   },
   "dependencies": {
-    "firebase": "^11.0.0"
+    "firebase": "^11.0.0",
+    "kump-account": "github:Jimisow/kump-account"
   },
   "devDependencies": {
     "gh-pages": "^6.3.0",

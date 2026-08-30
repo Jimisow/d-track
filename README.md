@@ -65,6 +65,68 @@ Le site est servi via le domaine personnalisé `dtrack.kump.fr` (fichier [`publi
 
 Build command : `npm run build` — répertoire de publication : `dist`. Rien d'autre à configurer (app 100 % statique + Firestore côté client). Adapter/retirer le `base` de `vite.config.js` si l'app est servie à la racine du domaine plutôt que dans un sous-dossier.
 
+## 👤 Compte KUMP (identité partagée entre les jeux)
+
+D-Track est branché sur **`kump-account`**, le compte joueur partagé de tous
+les jeux KUMP : une seule identité, le temps de jeu, les statistiques
+(parties, meilleur score, victoires en ligne) et les trophées, visibles sur
+[kump.fr/profil](https://kump.fr/profil) à côté des autres jeux.
+
+```bash
+npm install github:Jimisow/kump-account
+```
+
+Variables d'environnement (`.env`, hors git) : `VITE_KUMP_API_KEY`,
+`VITE_KUMP_AUTH_DOMAIN`, `VITE_KUMP_PROJECT_ID`, `VITE_KUMP_STORAGE_BUCKET`,
+`VITE_KUMP_MESSAGING_SENDER_ID`, `VITE_KUMP_APP_ID` (identifiants Firebase
+**publics** du projet `kump-812dd`), plus `VITE_KUMP_API_URL` — l'URL du
+serveur de validation (`http://localhost:3000` en dev, l'URL de kump.fr en
+production). **Sans ces variables, D-Track fonctionne exactement comme avant** :
+le module reste inactif, le jeu tourne sur son `localStorage`.
+
+### Ce qui ne doit pas être défait
+
+- **Le solo reste jouable 100 % hors ligne.** `net/kumpBridge.js` est le seul
+  fichier importé statiquement ; il n'atteint `net/kump.js` — donc le SDK
+  Firebase (469 Ko) — que par `await import()`, à la fin d'une partie. Le
+  chunk de démarrage reste à ~29 Ko. Un `import` statique de `kump-account`
+  où que ce soit annulerait ce découpage.
+- **`storage.js` reste la source de vérité de l'affichage local.** Le meilleur
+  score et l'historique à l'écran viennent toujours du `localStorage` : le
+  compte est un plus, jamais une condition pour jouer.
+- **Aucun compte n'est créé à l'ouverture de l'app**, seulement à la première
+  partie TERMINÉE — sinon chaque visite fabriquerait un compte anonyme
+  fantôme dans la base KUMP.
+- **Ne jamais écrire dans Firestore depuis le jeu.** Les règles refusent au
+  client d'écrire son temps de jeu, ses statistiques et ses trophées, **et le
+  refus est silencieux**. La seule voie est `submitSession()`.
+
+### Le serveur rejoue la partie, il ne croit pas le score
+
+Le jeu n'envoie pas son score : il envoie le symbole de départ, la séquence
+des 12 lancers et **l'ordre exact des 24 placements**. Le serveur de kump.fr
+rejoue la partie avec les mêmes règles pures et refuse au premier placement
+illégal. C'est pour ça que `onCommit` transmet `moves` (`{ cell, die }`) et
+que `gameScreen.js` capture `dieChoice` avant de le remettre à zéro.
+
+⚠️ **`npm run export:rules` après TOUTE modification du barème, de la grille
+ou des dés** (`src/game/*.js`). Le script copie ces règles dans kump.fr, qui
+juge avec sa copie : une copie périmée fait refuser des parties **honnêtes**.
+Même discipline que `export:bounds` dans Androgame.
+
+**Limites assumées, à ne pas oublier :**
+
+- En **solo**, les dés sont tirés par le client. Un tricheur peut fabriquer
+  une séquence parfaite et la grille qui va avec : la partie sera jugée
+  cohérente, parce qu'elle l'est. Son plafond reste le maximum théorique du
+  jeu, pas l'infini — mais **c'est pourquoi aucun classement D-Track n'est
+  publié**. Le meilleur score sert à se situer soi-même.
+- Une partie **reprise après un rafraîchissement de page** n'est pas
+  enregistrée : la grille est restaurée depuis Firestore, mais pas l'ordre
+  des placements, et le serveur ne peut pas rejouer ce qu'il ne voit pas.
+- La **victoire en ligne** est déclarée : kump.fr n'a aucun accès au projet
+  Firebase de D-Track (`d-tack-37281`) pour la vérifier.
+
 ## 📐 Architecture
 
 ```

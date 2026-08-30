@@ -11,6 +11,7 @@ import { getTheme, setTheme, getPlayerName, setPlayerName, getHistory, getActive
 import { startSolo } from './ui/solo.js';
 import { renderRules } from './ui/rules.js';
 import { refreshHome, goHome } from './ui/home.js';
+import { refreshAccountButton, openAccountScreen, openShopScreen } from './ui/accountButton.js';
 import { el } from './ui/dom.js';
 
 // ---------- Thème (sombre par défaut, clair en option) ----------
@@ -74,6 +75,9 @@ $('#btn-rules').addEventListener('click', () => {
   renderRules();
   showScreen('rules');
 });
+
+$('#btn-account').addEventListener('click', () => openAccountScreen());
+$('#btn-shop').addEventListener('click', () => openShopScreen());
 
 $('#btn-history').addEventListener('click', () => {
   const content = $('#history-content');
@@ -175,4 +179,5 @@ $('#btn-resume').addEventListener('click', async () => {
 // ---------- Démarrage ----------
 
 refreshHome();
+refreshAccountButton();
 showScreen('home');

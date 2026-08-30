@@ -3,3 +3,5 @@ dist/
 dev-dist/
 .firebase/
 *.log
+.env
+.env.local

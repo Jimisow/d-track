@@ -735,3 +735,186 @@ body {
   .screen { padding-top: 24px; }
   .die { width: 72px; height: 72px; }
 }
+
+/* ======================= Compte KUMP ======================= */
+/* Écran de connexion / profil (ui/account.js). Réutilise les tokens du thème
+   (--surface, --accent, --radius) plutôt que d'inventer une palette : le
+   compte doit avoir l'air d'appartenir à D-Track, pas d'un service tiers
+   collé par-dessus. Fonctionne donc en thème sombre comme en thème clair
+   sans règle dédiée. */
+
+.account-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60; /* au-dessus de .waiting-overlay (30) et du visionneur de grille */
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+/* Verrou de défilement pendant que l'écran est ouvert : sans lui, la page
+   derrière défile sous les doigts au lieu du contenu de la carte. */
+body.modal-open { overflow: hidden; }
+
+.account-card {
+  position: relative;
+  width: min(420px, 100%);
+  max-height: min(88vh, 720px);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px 20px 20px;
+}
+.account-card:focus { outline: none; }
+
+.account-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.account-close:hover { color: var(--text); }
+
+.account-title { margin: 0 0 4px; font-size: 1.25rem; }
+.account-subtitle { margin: 18px 0 8px; font-size: .95rem; color: var(--text-dim); }
+.account-intro, .account-note { color: var(--text-dim); font-size: .85rem; line-height: 1.45; }
+.account-intro { margin: 0 0 14px; }
+.account-note { margin: 10px 0 0; }
+.account-note a { color: var(--accent-2); }
+.account-loading { color: var(--text-dim); text-align: center; padding: 24px 0; }
+
+.account-error {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border-radius: var(--radius-small);
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  color: var(--text);
+  font-size: .85rem;
+}
+
+.account-body label {
+  display: block;
+  margin: 10px 0 4px;
+  font-size: .82rem;
+  color: var(--text-dim);
+}
+.account-body input {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: var(--radius-small);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+}
+.account-body input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.account-body .btn-big { margin-top: 14px; }
+
+.account-sep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 4px;
+  color: var(--text-dim);
+  font-size: .8rem;
+}
+.account-sep::before, .account-sep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.account-switch { margin-top: 14px; text-align: center; }
+
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.account-identity strong { display: block; }
+.account-email { color: var(--text-dim); font-size: .82rem; word-break: break-all; }
+
+.account-avatar {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-small);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--accent-2);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.account-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.account-tile {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-small);
+  padding: 10px 12px;
+}
+.account-tile strong { display: block; font-size: 1.15rem; }
+.account-tile span { color: var(--text-dim); font-size: .75rem; }
+
+.account-trophies { display: flex; flex-wrap: wrap; gap: 6px; }
+.account-trophy {
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: .78rem;
+  border: 1px solid var(--border);
+}
+/* Les trophées non obtenus restent VISIBLES, en retrait : ils disent au
+   joueur ce qui reste à faire. Les masquer priverait la liste de son intérêt. */
+.account-trophy.won {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.account-trophy.locked { color: var(--text-dim); opacity: .6; }
+
+.account-rename { display: flex; gap: 8px; align-items: center; }
+.account-rename input { flex: 1; }
+.account-logout { margin-top: 16px; color: var(--danger); }
+
+/* Bloc « ce compte Google appartient déjà à un profil » : n'apparaît qu'après
+   un rattachement refusé pour identité déjà prise. Encadré, pour qu'il se lise
+   comme une proposition et non comme la suite du formulaire — l'action qu'il
+   porte abandonne la session en cours. */
+.account-reprise {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-small);
+  background: var(--surface-2);
+}
+.account-reprise .account-note { margin: 0 0 4px; }
+
+/* Variante NEUTRE du bandeau : pour une situation qui a une issue (« ce compte
+   Google appartient déjà à un profil »), pas pour un échec. Le rouge est
+   réservé à ce qui a vraiment échoué. */
+.account-error.info {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}

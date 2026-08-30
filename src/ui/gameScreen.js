@@ -40,7 +40,13 @@ export function getBoard() {
 }
 
 export class GameBoard {
-  // onCommit({ grid, turn }) : appelé après validation d'un tour (1–12) ;
+  // onCommit({ grid, turn, moves }) : appelé après validation d'un tour (1–12) ;
+  //   `moves` = les 2 placements du tour, DANS L'ORDRE joué, chacun sous la
+  //   forme { cell, die } où `die` est l'index (0 ou 1) du dé posé sur cette
+  //   case. C'est ce qui permet au serveur de validation de kump.fr de REJOUER
+  //   la partie au lieu de croire le score annoncé (voir src/net/kump.js) :
+  //   la grille finale seule ne dirait rien de l'ORDRE, dont dépend la
+  //   légalité de chaque placement (règle d'adjacence).
   // onPick(symbolId) : appelé au choix du symbole initial ;
   // les deux peuvent être async (écriture Firestore) — le plateau reste
   // verrouillé tant que ça n'a pas abouti.
@@ -354,6 +360,13 @@ export class GameBoard {
     const committedTurn = this.turn;
     const cell1 = this.pick1;
     const cell2 = this.pick2;
+    // Capturé ICI : `dieChoice` est remis à null quelques lignes plus bas, et
+    // sans lui on ne saurait plus quel dé a été posé sur quelle case.
+    const die1 = this.dieChoice;
+    const committedMoves = [
+      { cell: cell1, die: die1 },
+      { cell: cell2, die: 1 - die1 }
+    ];
     this.grid = afterBoth;
     this.justPlaced = [cell1, cell2];
     this.mode = 'idle';
@@ -373,7 +386,7 @@ export class GameBoard {
     this.playCompletions(completions);
 
     try {
-      await this.onCommit({ grid: this.grid.slice(), turn: committedTurn });
+      await this.onCommit({ grid: this.grid.slice(), turn: committedTurn, moves: committedMoves });
     } finally {
       this.busy = false;
     }

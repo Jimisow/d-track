@@ -7,7 +7,8 @@ const KEYS = {
   name: 'dtrack.name',
   theme: 'dtrack.theme',
   activeGame: 'dtrack.activeGame',
-  localUid: 'dtrack.localUid'
+  localUid: 'dtrack.localUid',
+  kumpName: 'dtrack.kumpName'
 };
 
 function read(key, fallback) {
@@ -76,6 +77,22 @@ export function getActiveGame() {
 export function setActiveGame(code) {
   if (code) write(KEYS.activeGame, { code });
   else localStorage.removeItem(KEYS.activeGame);
+}
+
+// --- Compte KUMP : miroir local du pseudo ------------------------------------
+// Le bouton « Compte » de l'accueil doit afficher le pseudo du joueur SANS
+// charger le SDK Firebase (~470 Ko) : sans ce miroir, il faudrait interroger
+// le compte à chaque affichage de l'accueil, ce qui annulerait tout l'intérêt
+// du chargement paresseux. La source de vérité reste le compte KUMP ; ceci
+// n'en est qu'un reflet, réécrit à chaque ouverture de l'écran de compte.
+
+export function getKumpName() {
+  return read(KEYS.kumpName, null);
+}
+
+export function setKumpName(name) {
+  if (name) write(KEYS.kumpName, name);
+  else localStorage.removeItem(KEYS.kumpName);
 }
 
 // UID de secours si l'authentification anonyme Firebase échoue.

@@ -10,12 +10,13 @@
 
 import * as net from '../net/firebase.js';
 import { rollForTurn, TURNS } from '../game/dice.js';
-import { scoreGrid } from '../game/scoring.js';
+import { scoreGrid, rankPlayers } from '../game/scoring.js';
 import { setActiveGame, getPlayerName } from '../storage.js';
 import { $, el, toast, showScreen, currentScreen } from './dom.js';
 import { getBoard } from './gameScreen.js';
 import { showMultiResults } from './results.js';
 import { goHome } from './home.js';
+import { sendToKump } from '../net/kumpBridge.js';
 
 const WAIT_TIMEOUT_MS = 90 * 1000; // délai avant "Continuer sans lui"
 const HEARTBEAT_MS = 25 * 1000;
@@ -55,7 +56,12 @@ function enterSession(code, uid) {
     waitingTicker: null,
     lastHostCheck: 0,
     unsub: null,
-    hbTimer: null
+    hbTimer: null,
+    // Trace de la partie pour le compte KUMP : le serveur de validation
+    // rejoue la partie, il lui faut l'ordre exact des placements. Réellement
+    // renseignée au démarrage de chaque partie (voir handlePlaying), pas ici.
+    kumpStartedAt: 0,
+    kumpMoves: []
   };
   setActiveGame(code);
   state.hbTimer = setInterval(() => net.heartbeat(code, uid), HEARTBEAT_MS);
@@ -188,6 +194,16 @@ function handlePlaying(data, me) {
     state.resultsShown = false;
     state.playingTurn = null;
     state.initialCommitted = false;
+    // Trace pour le compte KUMP : remise à zéro ICI et pas dans la branche
+    // « lobby », pour deux raisons. D'une, cette branche se rejoue à chaque
+    // REVANCHE (`net.rematch()` repasse le salon en `lobby` puis en
+    // `playing`) — sans ça, les placements de la partie précédente
+    // s'ajouteraient à ceux de la nouvelle et le serveur refuserait les deux.
+    // De deux, la durée mesurée part du vrai début de la partie, pas de
+    // l'entrée dans le salon : sinon l'attente des autres joueurs serait
+    // comptée comme du temps de jeu.
+    state.kumpMoves = [];
+    state.kumpStartedAt = Date.now();
 
     board.onQuit = () => {
       if (confirm('Quitter ? Vous pourrez reprendre cette partie avec le même code.')) {
@@ -277,7 +293,10 @@ function syncTurn(data, me) {
 }
 
 // Validation d'un tour : publication de la grille + progression (+ score au 12e).
-async function onCommit({ grid, turn }) {
+async function onCommit({ grid, turn, moves }) {
+  // Collecté avant l'écriture Firestore : même si la publication échoue et
+  // qu'un autre essai suit, le tour n'est joué qu'une fois côté plateau.
+  if (state && Array.isArray(moves)) state.kumpMoves.push(...moves);
   const progress = turn === 0 ? 0 : turn;
   const score = turn === TURNS ? scoreGrid(grid, { finalScoring: true }).total : null;
   const firestoreGrid = grid.map((c) => (c === null ? -1 : c));
@@ -295,6 +314,45 @@ async function onCommit({ grid, turn }) {
       await new Promise((r) => setTimeout(r, 1500 * attempt));
     }
   }
+}
+
+/**
+ * Envoie la partie en ligne terminée au compte KUMP.
+ *
+ * La victoire est DÉCLARÉE : le serveur de kump.fr ne peut pas la vérifier,
+ * la partie vivant dans le projet Firebase de D-Track (`d-tack-37281`)
+ * auquel il n'a aucun accès. Elle est calculée ici avec exactement la même
+ * fonction que l'écran de résultats (`rankPlayers`), pour qu'un joueur ne
+ * puisse pas voir « 2e » à l'écran et « victoire » sur son profil.
+ */
+function sendGameToKump(data) {
+  const me = data.players?.[state.uid];
+  const rolls = data.sharedRolls;
+  const initialSymbol = me?.grid?.[0];
+
+  // Trace incomplète (partie reprise après un rafraîchissement) : on
+  // s'abstient, voir la remarque dans handleFinished.
+  if (state.kumpMoves.length !== TURNS * 2) return;
+  if (!Array.isArray(rolls) || typeof initialSymbol !== 'number' || initialSymbol < 0) return;
+
+  const entries = Object.entries(data.players || {})
+    .filter(([, p]) => !p.abandoned)
+    .map(([uid, p]) => ({
+      uid,
+      score: typeof p.score === 'number'
+        ? p.score
+        : scoreGrid((p.grid || []).map((c) => (c === -1 ? null : c)), { finalScoring: true }).total
+    }));
+  const mine = rankPlayers(entries).find((entry) => entry.uid === state.uid);
+
+  sendToKump({
+    mode: 'online',
+    initialSymbol,
+    rolls,
+    moves: state.kumpMoves,
+    durationMs: Date.now() - state.kumpStartedAt,
+    won: mine?.rank === 1
+  });
 }
 
 // --- Attente des autres joueurs ------------------------------------------------------
@@ -364,6 +422,19 @@ function handleFinished(data) {
 
   const firstTime = !state.resultsShown;
   state.resultsShown = true;
+
+  // --- Compte KUMP -------------------------------------------------------
+  // Envoyé une seule fois par partie (la revanche remet `resultsShown` à
+  // false et repart d'un nouvel état, donc d'une nouvelle trace).
+  //
+  // ⚠️ LIMITE ASSUMÉE : une partie REPRISE après un rafraîchissement de page
+  // n'est pas enregistrée. `board.reset()` restaure la grille depuis
+  // Firestore, mais pas l'ordre dans lequel les cases ont été posées — or
+  // c'est précisément ce que le serveur rejoue. Envoyer une trace incomplète
+  // ferait refuser la partie côté serveur (`moves-invalid`) : mieux vaut ne
+  // rien envoyer que de faire croire à une erreur. Le symbole de départ et
+  // les dés, eux, survivent au rafraîchissement (ils viennent de Firestore).
+  if (firstTime) sendGameToKump(data);
 
   showMultiResults(data, state.uid, {
     isHost: data.hostId === state.uid,
