@@ -69,6 +69,11 @@ il n'a aucun accès à `d-tack-37281` (voir « victoire déclarée » plus bas).
 
 ## Commandes
 
+> ⚠️ **C'est l'ASSISTANT qui lance ces commandes, jamais l'utilisateur.**
+> Ports à utiliser, ordre de déploiement et pièges silencieux :
+> [EXPLOITATION.md](EXPLOITATION.md).
+
+
 ```bash
 npm run dev            # http://localhost:5173
 npm test               # Vitest : scoring + grille (44 tests)
@@ -268,6 +273,11 @@ Un catalogue absent ne casse rien : l'écran retombe sur les identifiants
 bruts plutôt que d'afficher une liste vide.
 
 ## Variables d'environnement
+
+> ⚠️ **C'est l'ASSISTANT qui lance ces commandes, jamais l'utilisateur.**
+> Ports à utiliser, ordre de déploiement et pièges silencieux :
+> [EXPLOITATION.md](EXPLOITATION.md).
+
 
 `.env` (hors git) : `VITE_KUMP_API_KEY`, `VITE_KUMP_AUTH_DOMAIN`,
 `VITE_KUMP_PROJECT_ID`, `VITE_KUMP_STORAGE_BUCKET`,
