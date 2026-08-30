@@ -164,6 +164,19 @@ savoir avant d'y toucher :
 l'implémenter ici (lire `equippedTheme` / `equippedDice` dans les données du
 joueur et appliquer l'apparence). Rien d'autre.
 
+**Pour changer un PRIX** : rien à toucher, ni ici ni dans kump.fr. Depuis le
+2026-08-30 les prix se modifient dans le panel admin (`/admin` > Jeux >
+Boutique), sont stockés en base et s'appliquent au prochain chargement de
+l'écran de boutique — D-Track utilise celui du module, qui lit
+`getShopCatalog()`. **Ne jamais mettre un prix en cache côté jeu** : il peut
+changer sans le moindre déploiement.
+
+⚠️ **Un objet peut être RETIRÉ DE LA VENTE** depuis le panel. Il disparaît alors
+du catalogue, mais un joueur qui le possède déjà peut toujours l'équiper
+(`equipItem()` continue de marcher pour lui). Un thème retiré reste donc appliqué
+chez ceux qui le portaient — c'est voulu : le retirer de l'écran ne doit pas
+déshabiller les joueurs.
+
 ⚠️ **Équiper passe par le serveur**, comme acheter : les règles Firestore
 n'autorisent le client à écrire que `equippedSkin`/`equippedTrail` (hérités
 d'Androgame). `equipItem()` est le même appel que `buyItem()`, sans débit.
