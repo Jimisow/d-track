@@ -2,6 +2,12 @@
 
 ## À LIRE AVANT DE COMMENCER
 
+> ⚠️ **[EXPLOITATION.md](EXPLOITATION.md) — à lire en premier.** Comment lancer
+> les serveurs, sur quels ports, comment vérifier et comment déployer. Et une
+> règle qui change la façon de travailler : **c'est l'assistant qui lance les
+> commandes, jamais l'utilisateur.**
+
+
 Jeu de dés **roll & write** (1 à 6 joueurs), PWA. Solo 100 % hors ligne,
 multijoueur temps réel via Firestore. Depuis le 2026-08-29, il est aussi
 branché sur le **compte joueur KUMP**, partagé avec les autres jeux du studio.
@@ -33,6 +39,11 @@ il n'a aucun accès à `d-tack-37281` (voir « victoire déclarée » plus bas).
 
 ### Les règles de travail sur ce projet
 
+- **Lancer les serveurs et déployer, c'est L'ASSISTANT.** L'utilisateur ne
+  tape jamais de commande — il décide, il ne s'exécute pas. Ne jamais écrire
+  « lance `npm run dev` et dis-moi » ni laisser une étape « à faire de ton
+  côté » : lancer, regarder, capturer, rapporter. Détail des commandes et des
+  ports dans [EXPLOITATION.md](EXPLOITATION.md).
 1. **Tenir ce fichier à jour, systématiquement.** C'est la mémoire du projet :
    chaque session part de ce qui est écrit ici. Une décision structurante, un
    piège rencontré, un changement d'architecture se documentent **dans le même
