@@ -26,6 +26,9 @@ export function el(tag, attrs = {}, ...children) {
 export function showScreen(id) {
   $$('.screen').forEach((s) => s.classList.toggle('active', s.id === `screen-${id}`));
   window.scrollTo(0, 0);
+  // Écouté par net/social.js (statut « En partie » chez les amis KUMP) — un événement plutôt qu'un import, pour que l'écran
+  // n'entraîne pas le module des amis dans le chunk de démarrage.
+  document.dispatchEvent(new CustomEvent('dtrack:screen', { detail: id }));
 }
 
 export function currentScreen() {

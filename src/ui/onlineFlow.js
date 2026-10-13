@@ -24,6 +24,11 @@ const HOST_CHECK_MS = 30 * 1000;
 
 let state = null;
 
+/** Code du salon en cours (lobby ou partie), ou `null` — lu par les invitations d'amis (net/social.js). */
+export function currentLobbyCode() {
+  return state?.code ?? null;
+}
+
 // --- Entrée dans une session ----------------------------------------------------
 
 export async function createOnline(name) {

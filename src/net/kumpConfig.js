@@ -16,6 +16,9 @@ export const kumpFirebaseConfig = {
   storageBucket: import.meta.env.VITE_KUMP_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_KUMP_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_KUMP_APP_ID,
+  // Realtime Database du projet KUMP : amis KUMP (kump-account/social, net/social.js). Adresse PUBLIQUE par nature ; valeur par
+  // défaut en dur pour ne pas dépendre d'une variable de plus au build (2026-10-14).
+  databaseURL: import.meta.env.VITE_KUMP_DATABASE_URL || 'https://kump-812dd-default-rtdb.firebaseio.com',
 };
 
 /** URL du serveur de validation des parties (routes /api/game/* de kump.fr). */

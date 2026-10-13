@@ -325,3 +325,26 @@ rechargement, refus des six formes de falsification testées.
 **Non vérifié** : le mode **en ligne** (il demande deux navigateurs et une
 partie réelle à plusieurs) et la connexion **Google** (elle ouvre une popup).
 Le code suit le même chemin que le solo, mais il n'a pas été vu tourner.
+
+## Amis KUMP (2026-10-14)
+
+Module `kump-account/social` (doc : `kump-account/README.md` > Amis KUMP). Les écrans (panneau d'amis, chat, carte d'invitation,
+notification) sont ceux du module, habillés par `themeKump()` (`ui/accountButton.js`, exportée pour l'occasion) : les couleurs suivent
+le thème clair / sombre de D-Track. Les amis vivent dans le projet KUMP (`kump-812dd`, Realtime Database), PAS dans `d-tack-37281`.
+
+- **`net/social.js`** : pont (que des `import()`), `isSocialMember()`, `startFriends()`, `openFriends()`. Statut « En partie » chez les
+  amis d'après l'écran affiché : `ui/dom.js > showScreen()` émet l'événement `dtrack:screen` (un événement plutôt qu'un import, pour
+  ne pas tirer le module des amis dans le chunk de démarrage) ; écran `game` = « En partie ».
+- **Accueil** : bouton « 👥 Amis » (pied de page, pastille : messages non lus + demandes reçues), masqué si le compte KUMP n'est pas
+  configuré sur cette build. Présence au lancement SEULEMENT pour un compte qui utilise déjà les amis sur cet appareil
+  (`localStorage['kump.socialMember']`) — le solo reste léger et hors ligne.
+- **Inviter** : dans le salon en cours, sinon un salon est CRÉÉ (pseudo D-Track, à défaut celui du compte KUMP) ; l'ami reçoit
+  `https://dtrack.kump.fr/?join=CODE` (`localhost` en développement). `ui/onlineFlow.js > currentLobbyCode()` expose le code.
+- **`?join=CODE`** (adresse d'une invitation) : pseudo connu → on rejoint directement le salon ; sinon le formulaire « Rejoindre »
+  s'ouvre, code pré-rempli. Le paramètre est retiré de l'adresse (il ne sert qu'une fois).
+- **`net/kumpConfig.js`** : `databaseURL` ajoutée (valeur par défaut en dur, surchargeable par `VITE_KUMP_DATABASE_URL`) — sans elle,
+  « Les amis ne sont pas disponibles sur ce jeu ».
+- ⚠️ Piège payé en branchant : un script de modification par `String.replace` a transformé `$$(` en `$(` dans `showScreen` (`$$` est
+  un motif spécial du remplacement) — l'accueil plantait. Toujours relire le diff après une modification scriptée.
+- Vérifié (2026-10-14) : `npm test` (44), `npm run build`, accueil avec le bouton, panneau sans compte (« Connecte-toi… »), `?join=AB12`
+  → formulaire pré-rempli et adresse nettoyée, 0 erreur console. Le parcours complet entre deux comptes est testé côté Tower sur émulateurs.

@@ -50,7 +50,7 @@ export async function openAccountScreen() {
  * plutôt que de les recopier : changer de thème (clair/sombre) change donc
  * aussi la boutique, sans une ligne de plus.
  */
-function themeKump() {
+export function themeKump() { // réutilisé par net/social.js (écrans des amis)
   const styles = getComputedStyle(document.documentElement);
   const token = (nom, defaut) => styles.getPropertyValue(nom).trim() || defaut;
   return {

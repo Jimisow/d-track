@@ -12,6 +12,8 @@ import { startSolo } from './ui/solo.js';
 import { renderRules } from './ui/rules.js';
 import { refreshHome, goHome } from './ui/home.js';
 import { refreshAccountButton, openAccountScreen, openShopScreen } from './ui/accountButton.js';
+import { isSocialMember, openFriends, startFriends } from './net/social.js';
+import { isKumpConfigured } from './net/kumpConfig.js';
 import { el } from './ui/dom.js';
 
 // ---------- Thème (sombre par défaut, clair en option) ----------
@@ -78,6 +80,28 @@ $('#btn-rules').addEventListener('click', () => {
 
 $('#btn-account').addEventListener('click', () => openAccountScreen());
 $('#btn-shop').addEventListener('click', () => openShopScreen());
+
+// ---------- Amis KUMP (net/social.js) ----------
+// Pastille : messages non lus + demandes reçues. Le panneau, le chat et les invitations sont ceux de kump-account/social.
+const friendsBadge = (n) => {
+  const b = $('#friends-badge');
+  b.hidden = !(n > 0);
+  b.textContent = n > 99 ? '99+' : String(n);
+};
+const friendsOpts = { onBadge: friendsBadge, onAccount: () => openAccountScreen() };
+$('#btn-friends').hidden = !isKumpConfigured;
+$('#btn-friends').addEventListener('click', async () => {
+  const btn = $('#btn-friends');
+  btn.disabled = true;
+  try {
+    if (!(await openFriends(friendsOpts))) toast('Compte KUMP injoignable (hors ligne ?).');
+  } finally {
+    btn.disabled = false;
+  }
+});
+// Présence dès l'accueil, mais SEULEMENT pour un compte qui utilise déjà les amis sur cet appareil (sinon on ne télécharge pas
+// Firebase pour rien : le solo doit rester léger et hors ligne).
+if (isKumpConfigured && isSocialMember()) setTimeout(() => startFriends(friendsOpts), 2500);
 
 $('#btn-history').addEventListener('click', () => {
   const content = $('#history-content');
@@ -181,3 +205,30 @@ $('#btn-resume').addEventListener('click', async () => {
 refreshHome();
 refreshAccountButton();
 showScreen('home');
+
+// Invitation d'un ami acceptée (kump-account/social) : l'adresse reçue est ?join=CODE. Le code ne sert qu'une fois : il est retiré de
+// l'adresse. Avec un pseudo déjà connu, on rejoint directement le salon ; sinon le formulaire « Rejoindre » s'ouvre, code pré-rempli.
+{
+  const params = new URLSearchParams(location.search);
+  const code = (params.get('join') ?? '').trim().toUpperCase();
+  if (params.has('join')) {
+    params.delete('join');
+    history.replaceState(null, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
+  }
+  if (/^[A-Z0-9]{4,8}$/.test(code)) {
+    const name = getPlayerName();
+    if (name) {
+      import('./ui/onlineFlow.js')
+        .then((flow) => flow.joinOnline(code, name))
+        .catch((err) => {
+          console.error(err);
+          toast(err?.userMessage || 'Ce salon n’existe plus : demande à ton ami de t’inviter à nouveau.');
+          openSetup('join');
+          $('#input-code').value = code;
+        });
+    } else {
+      openSetup('join');
+      $('#input-code').value = code;
+    }
+  }
+}
